@@ -37,8 +37,20 @@
   <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
 
   <style>
-    body   { margin: 0; background: #111; }
-    canvas { display: block; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
   </style>
 </head>
 <body>
