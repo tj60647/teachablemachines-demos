@@ -67,7 +67,8 @@ function preload() {
  * classification loop once the video stream is ready.
  */
 function setup() {
-  createCanvas(640, 480);
+  const cnv = createCanvas(640, 480);
+  cnv.parent('sketch-wrapper');
   background(0);
 
   // Request the front-facing camera ("user").
