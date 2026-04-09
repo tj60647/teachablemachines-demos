@@ -91,7 +91,8 @@ function setup() {
 
 /**
  * p5.js draw loop — renders the live video and overlays classification results
- * on every animation frame.
+ * on every animation frame.  Each label is drawn with a semi-transparent dark
+ * backing so it stays legible regardless of what the camera sees behind it.
  */
 function draw() {
   background(0);
@@ -101,18 +102,29 @@ function draw() {
     // Sort so the highest-confidence prediction appears first.
     results.sort((a, b) => b.confidence - a.confidence);
 
+    textSize(20);
+    textAlign(LEFT, TOP);
+
     for (let i = 0; i < results.length; i++) {
-      // Map rank to opacity: rank 0 → 255 (opaque), last rank → 50 (faint).
-      let alpha = map(i, 0, results.length - 1, 255, 50);
-      fill(255, alpha);
+      // Map rank to opacity: rank 0 → 255 (opaque), last rank → 80 (faint).
+      let alpha = map(i, 0, results.length - 1, 255, 80);
+      let label = `${results[i].label}: ${(results[i].confidence * 100).toFixed(1)}%`;
+
+      // Draw a semi-transparent dark pill behind the text so it reads clearly
+      // over any background in the video frame.
+      let tw = textWidth(label);
+      let th = 20; // approximate text height at textSize(20)
+      let padX = 8;
+      let padY = 4;
+      let x = 14;
+      let y = 16 + i * 32;
+
       noStroke();
-      textSize(32);
-      textAlign(LEFT, TOP);
-      text(
-        `${results[i].label} (${(results[i].confidence * 100).toFixed(1)}%)`,
-        20,
-        30 + i * 40
-      );
+      fill(0, alpha * 0.75); // dark backing, fades with the label
+      rect(x - padX, y - padY, tw + padX * 2, th + padY * 2, 4);
+
+      fill(255, alpha);
+      text(label, x, y);
     }
   }
 }
