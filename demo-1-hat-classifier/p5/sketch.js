@@ -102,22 +102,22 @@ function draw() {
     // Sort so the highest-confidence prediction appears first.
     results.sort((a, b) => b.confidence - a.confidence);
 
-    textSize(20);
+    textSize(32);
     textAlign(LEFT, TOP);
 
     for (let i = 0; i < results.length; i++) {
-      // Map rank to opacity: rank 0 → 255 (opaque), last rank → 80 (faint).
-      let alpha = map(i, 0, results.length - 1, 255, 80);
-      let label = `${results[i].label}: ${(results[i].confidence * 100).toFixed(1)}%`;
+      // Map rank to opacity: rank 0 → 255 (opaque), last rank → 50 (faint).
+      let alpha = map(i, 0, results.length - 1, 255, 50);
+      let label = `${results[i].label} (${(results[i].confidence * 100).toFixed(1)}%)`;
 
       // Draw a semi-transparent dark pill behind the text so it reads clearly
       // over any background in the video frame.
       let tw = textWidth(label);
-      let th = 20; // approximate text height at textSize(20)
+      let th = 32; // approximate text height at textSize(32)
       let padX = 8;
       let padY = 4;
-      let x = 14;
-      let y = 16 + i * 32;
+      let x = 20;
+      let y = 30 + i * 40;
 
       noStroke();
       fill(0, alpha * 0.75); // dark backing, fades with the label
