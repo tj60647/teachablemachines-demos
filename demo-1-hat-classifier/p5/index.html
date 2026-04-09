@@ -29,12 +29,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Demo 1 — Hat Classifier | Teachable Machines Demos</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎩</text></svg>">
 
   <!-- p5.js -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
 
-  <!-- ml5.js — image classification via Teachable Machine -->
-  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+  <!-- TensorFlow.js + Teachable Machine image library (loaded once, no duplicate-backend warnings) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
 
   <style>
     html, body {

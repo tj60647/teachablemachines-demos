@@ -1,7 +1,7 @@
 /**
  * @fileoverview This p5.js sketch captures video from the user's webcam,
- * displays it on the canvas, and classifies frames using an ml5.js image
- * classifier backed by a Teachable Machine model.
+ * displays it on the canvas, and classifies frames using a Teachable Machine
+ * image model loaded directly via the @teachablemachine/image library.
  *
  * It shows multiple predictions with varying transparency levels based on
  * confidence. The model provided is imperfect — it detects:
@@ -13,7 +13,7 @@
  * …with some uncertainty between categories.
  *
  * To make your own model, visit https://teachablemachine.withgoogle.com/train
- * and update MODEL_URL below to point to your exported model.
+ * and update MODEL_BASE_URL below to point to your exported model.
  *
  * @author Thomas J McLeish
  * @date March 19, 2025
@@ -23,26 +23,38 @@
 // ── Configuration ────────────────────────────────────────────────────────────
 
 /**
- * URL to the Teachable Machine model JSON file.
- * Replace this with the URL of your own exported model to use a different
- * classifier.
+ * Base URL of the Teachable Machine model (the folder that contains
+ * model.json and metadata.json).  Keep the trailing slash.
+ * Replace this with the base URL of your own exported model.
  * @constant {string}
  */
-const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/c5uGYH2xj/model.json';
+const MODEL_BASE_URL = 'https://teachablemachine.withgoogle.com/models/c5uGYH2xj/';
+
+/** Full URL to the model topology file. @constant {string} */
+const MODEL_JSON_URL     = MODEL_BASE_URL + 'model.json';
+
+/** Full URL to the class-label metadata file. @constant {string} */
+const MODEL_METADATA_URL = MODEL_BASE_URL + 'metadata.json';
 
 // ── Global state ─────────────────────────────────────────────────────────────
 
 /**
- * ml5.js Image Classifier instance.
- * @type {ml5.ImageClassifier}
+ * Teachable Machine image model instance.
+ * @type {tmImage.CustomMobileNet|null}
  */
-let classifier;
+let model = null;
 
 /**
  * p5.js Video Capture object.
  * @type {p5.Element}
  */
 let video;
+
+/**
+ * True once the webcam stream has data and is ready to classify.
+ * @type {boolean}
+ */
+let videoReady = false;
 
 /**
  * Array of the most recent classification results (label + confidence pairs).
@@ -54,17 +66,9 @@ let results = [];
 // ── p5.js lifecycle ───────────────────────────────────────────────────────────
 
 /**
- * Preloads the ml5.js image classification model before setup() runs.
- * Keeping this in preload() ensures the model is ready the moment the
- * sketch starts.
- */
-function preload() {
-  classifier = ml5.imageClassifier(MODEL_URL);
-}
-
-/**
- * Sets up the p5.js canvas, initialises webcam capture, and starts the
- * classification loop once the video stream is ready.
+ * Sets up the p5.js canvas, initialises webcam capture, and loads the
+ * Teachable Machine model asynchronously.  Classification begins as soon as
+ * both the model and the video stream are ready, whichever finishes last.
  */
 function setup() {
   const cnv = createCanvas(640, 480);
@@ -82,10 +86,26 @@ function setup() {
   video.size(640, 480);
   video.hide(); // Use only the canvas — hide the default <video> element.
 
+  // Load the Teachable Machine model.  tmImage is the global exposed by the
+  // @teachablemachine/image CDN script.
+  tmImage.load(MODEL_JSON_URL, MODEL_METADATA_URL)
+    .then(function(loadedModel) {
+      model = loadedModel;
+      // If the video stream was already ready by the time the model loaded,
+      // start classifying immediately.
+      if (videoReady) {
+        console.log('Model loaded — starting classification.');
+        classifyVideo();
+      }
+    });
+
   // Wait until the video stream has data before starting classification.
-  video.elt.onloadeddata = () => {
-    console.log('Video loaded — starting classification.');
-    classifyVideo();
+  video.elt.onloadeddata = function() {
+    videoReady = true;
+    if (model) {
+      console.log('Video loaded — starting classification.');
+      classifyVideo();
+    }
   };
 }
 
@@ -132,26 +152,26 @@ function draw() {
 // ── Classification loop ────────────────────────────────────────────────────────
 
 /**
- * Sends the current video frame to the ml5.js classifier.
- * Only runs if the video stream is fully ready (readyState === 4).
+ * Sends the current video frame to the Teachable Machine model.
+ * Only runs if both the model and video stream are fully ready.
  */
 function classifyVideo() {
-  if (video.elt.readyState === 4) {
-    classifier.classify(video, gotResult);
-  }
+  if (!model || video.elt.readyState !== 4) return;
+  model.predict(video.elt).then(gotResult);
 }
 
 /**
- * Callback invoked by ml5.js each time a new set of predictions is ready.
- * Stores the results and immediately schedules the next classification so
- * the loop runs continuously.
+ * Callback invoked each time a new set of predictions is ready.
+ * Maps the Teachable Machine prediction format ({className, probability})
+ * to the internal format ({label, confidence}), stores the results, and
+ * immediately schedules the next classification so the loop runs continuously.
  *
- * @param {Array<{label: string, confidence: number}>} newResults
- *   Array of label/confidence pairs returned by the model.
+ * @param {Array<{className: string, probability: number}>} predictions
+ *   Array of class/probability pairs returned by the model.
  */
-function gotResult(newResults) {
-  if (newResults && newResults.length > 0) {
-    results = newResults;
+function gotResult(predictions) {
+  if (predictions && predictions.length > 0) {
+    results = predictions.map(p => ({ label: p.className, confidence: p.probability }));
   }
   classifyVideo();
 }
